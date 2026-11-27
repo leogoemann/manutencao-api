@@ -1,0 +1,776 @@
+{
+  "info": {
+    "name": "Manutenção Preventiva API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Smoke tests da API de manutenção preventiva. Execute em ordem (Postman Runner ou Newman)."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001"
+    },
+    {
+      "key": "maquinaId",
+      "value": ""
+    },
+    {
+      "key": "codigo",
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get(\"codigo\")) pm.collectionVariables.set(\"codigo\", \"PM-\" + Date.now());"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Máquinas",
+      "item": [
+        {
+          "name": "Cadastrar máquina",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maquina\": {\n    \"nome\": \"Fresadora Postman\",\n    \"codigo\": \"{{codigo}}\",\n    \"fabricante\": \"Romi\",\n    \"intervalo_manutencao_horas\": 100\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 201\", () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set(\"maquinaId\", j.id);",
+                  "pm.test(\"começa em dia\", () => pm.expect(j.status_manutencao).to.eql(\"em_dia\"));",
+                  "pm.test(\"horas zeradas\", () => pm.expect(j.horas_uso_total).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cadastrar máquina inválida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maquina\": {\n    \"nome\": \"\",\n    \"codigo\": \"\",\n    \"intervalo_manutencao_horas\": 0\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"erros por campo\", () => pm.expect(pm.response.json().errors).to.include.keys(\"nome\",\"codigo\",\"intervalo_manutencao_horas\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar máquinas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"é lista\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalhar máquina",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/{{maquinaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "{{maquinaId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalhar máquina inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "0"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"formato de erro\", () => pm.expect(pm.response.json()).to.have.key(\"error\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Atualizar máquina",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/{{maquinaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "{{maquinaId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maquina\": {\n    \"localizacao\": \"Linha 4\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"atualizou\", () => pm.expect(pm.response.json().localizacao).to.eql(\"Linha 4\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Registros de uso",
+      "item": [
+        {
+          "name": "Registrar horas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/{{maquinaId}}/registros_uso",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "{{maquinaId}}",
+                "registros_uso"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"registro_uso\": {\n    \"horas\": 95,\n    \"data\": \"2026-01-15\",\n    \"observacao\": \"Turno A\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Status após horas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/{{maquinaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "{{maquinaId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"somou horas\", () => pm.expect(j.horas_uso_total).to.eql(95));",
+                  "pm.test(\"próxima da manutenção\", () => pm.expect(j.status_manutencao).to.eql(\"proxima\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar horas inválidas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/{{maquinaId}}/registros_uso",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "{{maquinaId}}",
+                "registros_uso"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"registro_uso\": {\n    \"horas\": 0,\n    \"data\": \"2999-01-01\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar registros",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/{{maquinaId}}/registros_uso",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "{{maquinaId}}",
+                "registros_uso"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alertas",
+      "item": [
+        {
+          "name": "Alertas padrão",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/alertas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alertas"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().find(x => x.maquina_id == pm.collectionVariables.get(\"maquinaId\"));",
+                  "pm.test(\"máquina aparece nos alertas\", () => pm.expect(a).to.exist);",
+                  "pm.test(\"mensagem legível\", () => pm.expect(a.mensagem).to.eql(\"Faltam 5 h para a manutenção\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alertas filtro inválido",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/alertas?status=quebrada",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alertas"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "quebrada"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Manutenções",
+      "item": [
+        {
+          "name": "Registrar corretiva",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/{{maquinaId}}/manutencoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "{{maquinaId}}",
+                "manutencoes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"manutencao\": {\n    \"data\": \"2026-01-16\",\n    \"tipo\": \"corretiva\",\n    \"descricao\": \"Troca de rolamento\",\n    \"custo\": 250\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Corretiva não reinicia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/{{maquinaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "{{maquinaId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"continua próxima\", () => pm.expect(pm.response.json().status_manutencao).to.eql(\"proxima\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar preventiva",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/{{maquinaId}}/manutencoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "{{maquinaId}}",
+                "manutencoes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"manutencao\": {\n    \"data\": \"2026-01-17\",\n    \"tipo\": \"preventiva\",\n    \"responsavel\": \"Equipe A\",\n    \"custo\": 800\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"usou horas atuais\", () => pm.expect(pm.response.json().horas_maquina).to.eql(95));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preventiva reinicia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/{{maquinaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "{{maquinaId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"em dia\", () => pm.expect(j.status_manutencao).to.eql(\"em_dia\"));",
+                  "pm.test(\"restam 100 h\", () => pm.expect(j.horas_restantes).to.eql(100));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar manutenções",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/{{maquinaId}}/manutencoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "{{maquinaId}}",
+                "manutencoes"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"duas manutenções\", () => pm.expect(pm.response.json().length).to.eql(2));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Limpeza",
+      "item": [
+        {
+          "name": "Excluir máquina",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/{{maquinaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "{{maquinaId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Máquina excluída",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/maquinas/{{maquinaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "maquinas",
+                "{{maquinaId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

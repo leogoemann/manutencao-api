@@ -1,0 +1,467 @@
+---
+openapi: 3.0.1
+info:
+  title: Manutenção Preventiva API
+  version: v1
+  description: API para cadastro de máquinas industriais, registro de horas de uso
+    e manutenções, e emissão de alertas de manutenção preventiva próxima ou atrasada.
+servers:
+- url: http://localhost:3001
+paths:
+  "/maquinas":
+    get:
+      summary: Listar máquinas com status de manutenção
+      tags:
+      - Máquinas
+      responses:
+        '200':
+          description: lista de máquinas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/maquina"
+    post:
+      summary: Cadastrar máquina
+      tags:
+      - Máquinas
+      parameters: []
+      responses:
+        '201':
+          description: máquina criada
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/maquina"
+        '422':
+          description: dados inválidos
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/erros_validacao"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/maquina_entrada"
+  "/maquinas/{id}":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: Detalhar máquina
+      tags:
+      - Máquinas
+      responses:
+        '200':
+          description: máquina encontrada
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/maquina"
+        '404':
+          description: máquina não encontrada
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/erro"
+    put:
+      summary: Atualizar máquina
+      tags:
+      - Máquinas
+      parameters: []
+      responses:
+        '200':
+          description: máquina atualizada
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/maquina"
+        '422':
+          description: dados inválidos
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/erros_validacao"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/maquina_entrada"
+    delete:
+      summary: Excluir máquina
+      tags:
+      - Máquinas
+      responses:
+        '204':
+          description: máquina excluída
+  "/maquinas/{maquina_id}/registros_uso":
+    parameters:
+    - name: maquina_id
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: Listar registros de uso da máquina
+      tags:
+      - Registros de uso
+      responses:
+        '200':
+          description: registros de uso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/registro_uso"
+    post:
+      summary: Registrar horas de uso
+      tags:
+      - Registros de uso
+      parameters: []
+      responses:
+        '201':
+          description: horas registradas
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/registro_uso"
+        '422':
+          description: dados inválidos
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/erros_validacao"
+        '404':
+          description: máquina não encontrada
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/erro"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/registro_uso_entrada"
+  "/maquinas/{maquina_id}/manutencoes":
+    parameters:
+    - name: maquina_id
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: Listar manutenções da máquina
+      tags:
+      - Manutenções
+      parameters:
+      - name: tipo
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - preventiva
+          - corretiva
+          - preditiva
+      responses:
+        '200':
+          description: manutenções
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/manutencao"
+    post:
+      summary: Registrar manutenção
+      tags:
+      - Manutenções
+      parameters: []
+      responses:
+        '201':
+          description: manutenção registrada
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/manutencao"
+        '422':
+          description: dados inválidos
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/erros_validacao"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/manutencao_entrada"
+  "/alertas":
+    get:
+      summary: Listar alertas de manutenção
+      tags:
+      - Alertas
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - proxima
+          - atrasada
+          - em_dia
+      responses:
+        '200':
+          description: alertas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/alerta"
+        '422':
+          description: status inválido
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/erros_validacao"
+components:
+  schemas:
+    maquina_entrada:
+      type: object
+      properties:
+        maquina:
+          type: object
+          properties:
+            nome:
+              type: string
+            codigo:
+              type: string
+            fabricante:
+              type: string
+              nullable: true
+            modelo:
+              type: string
+              nullable: true
+            localizacao:
+              type: string
+              nullable: true
+            data_aquisicao:
+              type: string
+              format: date
+              nullable: true
+            intervalo_manutencao_horas:
+              type: number
+            horas_uso_total:
+              type: number
+          required:
+          - nome
+          - codigo
+          - intervalo_manutencao_horas
+      required:
+      - maquina
+    maquina:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        codigo:
+          type: string
+        fabricante:
+          type: string
+          nullable: true
+        modelo:
+          type: string
+          nullable: true
+        localizacao:
+          type: string
+          nullable: true
+        data_aquisicao:
+          type: string
+          format: date
+          nullable: true
+        intervalo_manutencao_horas:
+          type: number
+        horas_uso_total:
+          type: number
+        horas_desde_ultima_manutencao:
+          type: number
+        horas_restantes:
+          type: number
+        ultima_manutencao_em:
+          type: string
+          format: date
+          nullable: true
+        status_manutencao:
+          type: string
+          enum:
+          - em_dia
+          - proxima
+          - atrasada
+      required:
+      - id
+      - nome
+      - codigo
+      - intervalo_manutencao_horas
+      - horas_uso_total
+      - horas_desde_ultima_manutencao
+      - horas_restantes
+      - status_manutencao
+    registro_uso_entrada:
+      type: object
+      properties:
+        registro_uso:
+          type: object
+          properties:
+            horas:
+              type: number
+            data:
+              type: string
+              format: date
+            observacao:
+              type: string
+              nullable: true
+          required:
+          - horas
+          - data
+      required:
+      - registro_uso
+    registro_uso:
+      type: object
+      properties:
+        id:
+          type: integer
+        maquina_id:
+          type: integer
+        horas:
+          type: number
+        data:
+          type: string
+          format: date
+        observacao:
+          type: string
+          nullable: true
+      required:
+      - id
+      - maquina_id
+      - horas
+      - data
+    manutencao_entrada:
+      type: object
+      properties:
+        manutencao:
+          type: object
+          properties:
+            data:
+              type: string
+              format: date
+            tipo:
+              type: string
+              enum:
+              - preventiva
+              - corretiva
+              - preditiva
+            descricao:
+              type: string
+              nullable: true
+            responsavel:
+              type: string
+              nullable: true
+            horas_maquina:
+              type: number
+              nullable: true
+            custo:
+              type: number
+              nullable: true
+          required:
+          - data
+          - tipo
+      required:
+      - manutencao
+    manutencao:
+      type: object
+      properties:
+        id:
+          type: integer
+        maquina_id:
+          type: integer
+        data:
+          type: string
+          format: date
+        tipo:
+          type: string
+          enum:
+          - preventiva
+          - corretiva
+          - preditiva
+        descricao:
+          type: string
+          nullable: true
+        responsavel:
+          type: string
+          nullable: true
+        horas_maquina:
+          type: number
+        custo:
+          type: number
+          nullable: true
+      required:
+      - id
+      - maquina_id
+      - data
+      - tipo
+      - horas_maquina
+    alerta:
+      type: object
+      properties:
+        maquina_id:
+          type: integer
+        maquina_nome:
+          type: string
+        maquina_codigo:
+          type: string
+        status:
+          type: string
+          enum:
+          - em_dia
+          - proxima
+          - atrasada
+        mensagem:
+          type: string
+        horas_restantes:
+          type: number
+        horas_desde_ultima_manutencao:
+          type: number
+      required:
+      - maquina_id
+      - maquina_nome
+      - status
+      - mensagem
+      - horas_restantes
+      - horas_desde_ultima_manutencao
+    erros_validacao:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+      - errors
+    erro:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error

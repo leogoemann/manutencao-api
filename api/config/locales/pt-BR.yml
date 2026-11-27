@@ -1,0 +1,22 @@
+pt-BR:
+  errors:
+    format: "%{attribute} %{message}"
+    messages:
+      blank: "não pode ficar em branco"
+      taken: "já está em uso"
+      greater_than: "deve ser maior que %{count}"
+      greater_than_or_equal_to: "deve ser maior ou igual a %{count}"
+      less_than_or_equal_to: "deve ser menor ou igual a %{count}"
+      inclusion: "não está incluído na lista"
+      not_a_number: "não é um número"
+      invalid: "não é válido"
+      data_futura: "não pode ser futura"
+      required: "é obrigatório"
+      excede_horas_maquina: "não pode ser maior que as horas de uso da máquina"
+  activerecord:
+    errors:
+      messages:
+        record_invalid: "A validação falhou: %{errors}"
+  date:
+    formats:
+      default: "%d/%m/%Y"
